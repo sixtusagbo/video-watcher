@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+import { writeFile, mkdir, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { extractFrames, probeDuration } from './extract-frames.mjs';
+
+function parseArgs(argv) {
+  const args = { input: null, out: './out', maxFrames: 40, scene: 0.3 };
+  const rest = argv.slice(2);
+  for (let i = 0; i < rest.length; i++) {
+    const a = rest[i];
+    if (a === '--out') args.out = rest[++i];
+    else if (a === '--max-frames') args.maxFrames = parseInt(rest[++i], 10);
+    else if (a === '--scene') args.scene = parseFloat(rest[++i]);
+    else if (a === '--help' || a === '-h') args.help = true;
+    else if (a.startsWith('--')) throw new Error(`Unknown flag: ${a}`);
+    else if (!args.input) args.input = a;
+    else throw new Error(`Unexpected positional argument: ${a}`);
+  }
+  return args;
+}
+
+const HELP = `Usage: watch.mjs <video> [options]
+
+Extract a smart set of frames from a video and write a manifest Claude can read.
+
+Options:
+  --out <dir>         Output directory (default: ./out)
+  --max-frames <n>    Cap on frames in the manifest (default: 40)
+  --scene <0..1>      Scene-change threshold for ffmpeg (default: 0.3)
+  -h, --help          Show this help
+`;
+
+async function main() {
+  const args = parseArgs(process.argv);
+  if (args.help || !args.input) {
+    process.stdout.write(HELP);
+    process.exit(args.help ? 0 : 1);
+  }
+
+  await stat(args.input);
+  await mkdir(args.out, { recursive: true });
+
+  const duration = await probeDuration(args.input);
+  console.error(`Probing: ${args.input} (${duration.toFixed(2)}s)`);
+
+  const frames = await extractFrames(args.input, {
+    outDir: args.out,
+    sceneThreshold: args.scene,
+    maxFrames: args.maxFrames,
+  });
+
+  const manifest = {
+    video: path.resolve(args.input),
+    duration_sec: Number(duration.toFixed(3)),
+    scene_threshold: args.scene,
+    max_frames: args.maxFrames,
+    frame_count: frames.length,
+    frames: frames.map(f => ({
+      timestamp: f.timestamp,
+      path: f.path,
+    })),
+  };
+
+  const manifestPath = path.join(args.out, 'manifest.json');
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
+  console.error(`Wrote ${frames.length} frames to ${args.out}/frames`);
+  console.error(`Manifest: ${manifestPath}`);
+}
+
+main().catch(err => {
+  console.error(err.message);
+  process.exit(1);
+});
