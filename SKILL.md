@@ -27,6 +27,7 @@ Do not use this skill for audio-only content or for questions that don't require
    - `--out <dir>` output directory (default `./out`)
    - `--max-frames <n>` cap on frames (default 40)
    - `--scene <0..1>` scene-change threshold (default 0.3 — lower for slow UI videos, higher for action-heavy footage)
+   - `--ocr` run tesseract on each frame and attach the recognized text to the manifest (skipped if tesseract is not installed)
 
 2. Read `out/manifest.json`. It lists every frame with its timestamp and relative path.
 
@@ -38,7 +39,7 @@ Do not use this skill for audio-only content or for questions that don't require
 
 - If the manifest comes back with too few frames, lower `--scene` (try `0.15`).
 - If the manifest is at the cap of 40 and the video is long, raise `--max-frames` rather than `--scene`.
-- For tutorial videos where the screen is mostly text, raise `--max-frames` and consider whether OCR would help (planned).
+- For tutorial videos where the screen is mostly text, pass `--ocr` so on-screen text reaches you cheaply via the manifest rather than through vision.
 
 ## Dependencies
 
