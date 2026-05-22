@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# generated output
+frames/
+manifest.json
+out/
+
+# local test videos
+*.mp4
+*.mov
+*.webm
+*.mkv
+
+# misc
+.DS_Store
+
+# debug
+npm-debug.log*
