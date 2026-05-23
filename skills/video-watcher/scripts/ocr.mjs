@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import path from 'node:path';
 
 export function tesseractAvailable() {
   return new Promise(resolve => {
@@ -8,9 +9,14 @@ export function tesseractAvailable() {
   });
 }
 
+// Run tesseract with cwd set to the frame's parent directory and pass the
+// basename. tesseract 5.5.2 / leptonica 1.87.0 refuses to open an absolute
+// path unless cwd already matches it (see issue #1).
 function runTesseract(framePath) {
   return new Promise((resolve, reject) => {
-    const child = spawn('tesseract', [framePath, 'stdout', '-l', 'eng']);
+    const cwd = path.dirname(framePath);
+    const file = path.basename(framePath);
+    const child = spawn('tesseract', [file, 'stdout', '-l', 'eng'], { cwd });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', d => { stdout += d.toString(); });
