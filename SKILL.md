@@ -1,6 +1,6 @@
 ---
 name: video-watcher
-description: Watch a video file (especially silent screen recordings, UI walkthroughs, or tutorials with no narration) and turn it into a smart set of frames plus timestamps that Claude can read. Use this when the user asks you to look at, analyze, summarize, or answer questions about a local video file or a video URL. Runs ffmpeg with scene-change detection so it only keeps frames where something visually changes.
+description: Watch a local video file or a video URL and turn it into a smart set of frames plus a timestamped transcript that Claude can read. Works on silent screen recordings as well as narrated videos. Use this when the user asks you to look at, analyze, summarize, or answer questions about a video. Runs ffmpeg with scene-change detection for frames, and optionally tesseract for on-screen text and whisper.cpp for audio.
 ---
 
 # video-watcher
@@ -30,12 +30,15 @@ Do not use this skill for audio-only content or for questions that don't require
    - `--max-frames <n>` cap on frames (default 40)
    - `--scene <0..1>` scene-change threshold (default 0.3 — lower for slow UI videos, higher for action-heavy footage)
    - `--ocr` run tesseract on each frame and attach the recognized text to the manifest (skipped if tesseract is not installed)
+   - `--transcribe` transcribe the audio track with whisper.cpp and add a `transcript` array of timestamped segments to the manifest (skipped if the video has no audio, or if whisper-cli / the model are not installed)
 
-2. Read `out/manifest.json`. It lists every frame with its timestamp and relative path.
+2. Read `out/manifest.json`. It lists every frame with its timestamp and relative path, plus a `transcript` array if `--transcribe` ran.
 
 3. Read individual frames from `out/frames/NNN.png` using the image-capable Read tool. Do not load every frame at once — pick the ones whose timestamps are relevant to the user's question. The manifest is small; the frames are not.
 
-4. Reason about the video using the frames and the timestamps. Quote timestamps when you reference specific moments.
+4. If a transcript is present, pair it with frames by timestamp. The transcript tells you what is being said; the frames tell you what is on screen. Quote timestamps when you reference specific moments.
+
+5. If the user pastes their own transcript or captions, treat that as authoritative over the auto-generated one.
 
 ## Tuning
 
@@ -46,4 +49,12 @@ Do not use this skill for audio-only content or for questions that don't require
 ## Dependencies
 
 - `ffmpeg` must be on PATH.
-- `tesseract` and `yt-dlp` are optional; skill works without them for local video paths.
+- `tesseract` (optional, for `--ocr`): `brew install tesseract`.
+- `yt-dlp` (optional, for URL inputs): `brew install yt-dlp`.
+- `whisper-cpp` (optional, for `--transcribe`): `brew install whisper-cpp`, then download a ggml model and either place it at `~/.cache/whisper/ggml-base.en.bin` or point at it via `WHISPER_MODEL_PATH` or `--whisper-model`. Example:
+
+  ```bash
+  mkdir -p ~/.cache/whisper
+  curl -L -o ~/.cache/whisper/ggml-base.en.bin \
+    https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin
+  ```

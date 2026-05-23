@@ -4,9 +4,18 @@ import path from 'node:path';
 import { extractFrames, probeDuration } from './extract-frames.mjs';
 import { ocrFrames, tesseractAvailable } from './ocr.mjs';
 import { isUrl, ytDlpAvailable, downloadVideo } from './fetch-video.mjs';
+import { transcribe } from './transcribe.mjs';
 
 function parseArgs(argv) {
-  const args = { input: null, out: './out', maxFrames: 40, scene: 0.3, ocr: false };
+  const args = {
+    input: null,
+    out: './out',
+    maxFrames: 40,
+    scene: 0.3,
+    ocr: false,
+    transcribe: false,
+    whisperModel: null,
+  };
   const rest = argv.slice(2);
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
@@ -14,6 +23,8 @@ function parseArgs(argv) {
     else if (a === '--max-frames') args.maxFrames = parseInt(rest[++i], 10);
     else if (a === '--scene') args.scene = parseFloat(rest[++i]);
     else if (a === '--ocr') args.ocr = true;
+    else if (a === '--transcribe') args.transcribe = true;
+    else if (a === '--whisper-model') args.whisperModel = rest[++i];
     else if (a === '--help' || a === '-h') args.help = true;
     else if (a.startsWith('--')) throw new Error(`Unknown flag: ${a}`);
     else if (!args.input) args.input = a;
@@ -32,6 +43,10 @@ Options:
   --max-frames <n>    Cap on frames in the manifest (default: 40)
   --scene <0..1>      Scene-change threshold for ffmpeg (default: 0.3)
   --ocr               Run tesseract on each frame and attach text to manifest
+  --transcribe        Transcribe the audio track with whisper.cpp and attach
+                      timestamped segments to the manifest
+  --whisper-model <p> Path to a ggml whisper model (else WHISPER_MODEL_PATH
+                      or ~/.cache/whisper/ggml-base.en.bin)
   -h, --help          Show this help
 `;
 
@@ -87,6 +102,20 @@ async function main() {
       return entry;
     }),
   };
+
+  if (args.transcribe) {
+    console.error('Transcribing audio');
+    const result = await transcribe(args.input, {
+      outDir: args.out,
+      modelPath: args.whisperModel,
+    });
+    if (result.skipped) {
+      console.error(`Skipping transcription: ${result.skipped}`);
+    } else {
+      console.error(`Transcribed ${result.segments.length} segments`);
+      manifest.transcript = result.segments;
+    }
+  }
 
   const manifestPath = path.join(args.out, 'manifest.json');
   await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
