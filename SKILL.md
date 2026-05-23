@@ -20,8 +20,10 @@ Do not use this skill for audio-only content or for questions that don't require
 1. Run the pipeline from the directory that contains the skill:
 
    ```bash
-   node scripts/watch.mjs <path-to-video>
+   node scripts/watch.mjs <path-to-video-or-url>
    ```
+
+   URLs (e.g. YouTube links) are downloaded via `yt-dlp` into `out/source/` first, then processed.
 
    Useful flags:
    - `--out <dir>` output directory (default `./out`)

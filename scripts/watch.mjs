@@ -3,6 +3,7 @@ import { writeFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { extractFrames, probeDuration } from './extract-frames.mjs';
 import { ocrFrames, tesseractAvailable } from './ocr.mjs';
+import { isUrl, ytDlpAvailable, downloadVideo } from './fetch-video.mjs';
 
 function parseArgs(argv) {
   const args = { input: null, out: './out', maxFrames: 40, scene: 0.3, ocr: false };
@@ -21,9 +22,10 @@ function parseArgs(argv) {
   return args;
 }
 
-const HELP = `Usage: watch.mjs <video> [options]
+const HELP = `Usage: watch.mjs <video-or-url> [options]
 
 Extract a smart set of frames from a video and write a manifest Claude can read.
+Accepts a local file path or an http(s) URL (URLs require yt-dlp on PATH).
 
 Options:
   --out <dir>         Output directory (default: ./out)
@@ -40,8 +42,18 @@ async function main() {
     process.exit(args.help ? 0 : 1);
   }
 
-  await stat(args.input);
   await mkdir(args.out, { recursive: true });
+
+  if (isUrl(args.input)) {
+    if (!(await ytDlpAvailable())) {
+      throw new Error('yt-dlp not found on PATH; install with: brew install yt-dlp');
+    }
+    console.error(`Downloading ${args.input}`);
+    args.input = await downloadVideo(args.input, path.join(args.out, 'source'));
+    console.error(`Downloaded to ${args.input}`);
+  }
+
+  await stat(args.input);
 
   const duration = await probeDuration(args.input);
   console.error(`Probing: ${args.input} (${duration.toFixed(2)}s)`);

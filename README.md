@@ -76,7 +76,7 @@ out/
 
 ## Status
 
-Early. See `spec.md` for the full design and open questions.
+Early.
 
 ## License
 
