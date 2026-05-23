@@ -1,0 +1,15 @@
+{
+  "name": "video-watcher",
+  "owner": {
+    "name": "Sixtus Agbo",
+    "url": "https://github.com/sixtusagbo"
+  },
+  "plugins": [
+    {
+      "name": "video-watcher",
+      "source": ".",
+      "description": "Lets Claude watch videos by turning them into a smart set of frames plus optional OCR text and optional audio transcript.",
+      "repository": "https://github.com/sixtusagbo/video-watcher"
+    }
+  ]
+}

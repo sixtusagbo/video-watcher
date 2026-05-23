@@ -14,11 +14,19 @@ Most "let Claude watch a video" workflows mean running ffmpeg by hand, extractin
 
 ## Install
 
+In Claude Code:
+
 ```
-git clone https://github.com/<user>/video-watcher
+/plugin marketplace add sixtusagbo/video-watcher
+/plugin install video-watcher@video-watcher
 ```
 
-Drop the folder into a place your Claude tool looks for Skills (e.g. `~/.claude/skills/` for Claude Code).
+Or, to use it manually without the plugin system:
+
+```
+git clone https://github.com/sixtusagbo/video-watcher /tmp/video-watcher
+cp -r /tmp/video-watcher/skills/video-watcher ~/.claude/skills/
+```
 
 Dependencies:
 

@@ -1,0 +1,13 @@
+{
+  "name": "video-watcher",
+  "version": "0.1.0",
+  "description": "Lets Claude watch videos by turning them into a smart set of frames plus optional OCR text and optional audio transcript.",
+  "author": {
+    "name": "Sixtus Agbo",
+    "url": "https://github.com/sixtusagbo"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/sixtusagbo/video-watcher",
+  "repository": "https://github.com/sixtusagbo/video-watcher",
+  "keywords": ["video", "ffmpeg", "ocr", "whisper", "transcription", "skill"]
+}
